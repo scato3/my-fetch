@@ -1,0 +1,79 @@
+{
+  "name": "hsc-fetch",
+  "version": "1.0.0",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rollup -c rollup.config.mjs",
+    "dev": "rollup -c rollup.config.mjs -w",
+    "type-check": "tsc --noEmit",
+    "prepare": "npm run build",
+    "cypress:open": "cypress open",
+    "cypress:run": "cypress run"
+  },
+  "keywords": [
+    "api",
+    "fetch",
+    "typescript",
+    "jwt",
+    "http-client",
+    "token-management",
+    "authentication",
+    "retry",
+    "timeout",
+    "request",
+    "rest-api",
+    "http",
+    "nextjs",
+    "isr",
+    "hooks",
+    "refresh-token",
+    "error-handling",
+    "web-development",
+    "async",
+    "typescript-library",
+    "networking",
+    "data-fetching",
+    "json"
+  ],
+  "author": "Hyunsu Shin",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "query-string": "^7.0.0",
+    "tslib": "^2.7.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.22.20",
+    "@babel/preset-typescript": "^7.23.0",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.5",
+    "@rollup/plugin-json": "^6.0.1",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^11.1.5",
+    "@supabase/supabase-js": "^2.45.6",
+    "@types/cypress": "^1.1.6",
+    "core-js": "^3.33.0",
+    "cypress": "^13.17.0",
+    "regenerator-runtime": "^0.14.0",
+    "rollup": "^4.1.0",
+    "rollup-plugin-typescript2": "^0.36.0",
+    "typescript": "^5.0.0",
+    "whatwg-fetch": "^3.6.19"
+  }
+}

@@ -1,0 +1,27 @@
+# 환경 변수 파일
+.env
+
+# Node.js 모듈 폴더
+node_modules/
+
+# 빌드 결과물
+dist/
+build/
+
+# 로그 파일
+*.log
+
+# 캐시 파일
+cypress/cache/
+
+# TypeScript 빌드 파일
+*.js
+*.d.ts
+
+# 운영 체제에서 생성하는 파일
+.DS_Store
+Thumbs.db
+
+# Cypress 결과물
+cypress/videos/
+cypress/screenshots/
