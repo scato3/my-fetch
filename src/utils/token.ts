@@ -6,7 +6,7 @@ export class TokenManager {
   }[] = [];
 
   async handleRefresh(
-    onRefreshToken?: () => string | null | Promise<string | null>,
+    onRefreshToken?: () => Promise<string | null>,
     onRefreshTokenFailed?: () => void
   ): Promise<void> {
     if (this.isRefreshing) {

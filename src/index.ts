@@ -28,8 +28,9 @@ class Api {
   }
 
   private createRequestMethod(method: string) {
-    return <T = unknown>(options: FetchOptions<T>) =>
-      this.requestHandler.execute<T>({ method, ...options }, this.config);
+    return <ResponseType = unknown, RequestType = unknown>(
+      options: FetchOptions<ResponseType, RequestType>
+    ) => this.requestHandler.execute<ResponseType>({ method, ...options }, this.config);
   }
 
   get = this.createRequestMethod("GET");
@@ -41,11 +42,6 @@ class Api {
   // Method to retrieve current configuration
   getConfig() {
     return this.config;
-  }
-
-  // Method to update configuration
-  updateConfig(config: Partial<ApiConfig>) {
-    this.config = { ...this.config, ...config };
   }
 }
 

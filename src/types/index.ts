@@ -5,9 +5,9 @@ export interface NextFetchOptions {
 }
 
 // Main fetch options
-export interface FetchOptions<T = unknown> {
+export interface FetchOptions<ResponseType = unknown, RequestType = unknown> {
   method?: string;
-  body?: T;
+  body?: RequestType;
   query?: Record<string, unknown>;
   url: string;
   headers?: Record<string, string>;
@@ -16,7 +16,7 @@ export interface FetchOptions<T = unknown> {
   retryCount?: number;
   retryDelay?: number;
   timeout?: number;
-  onSuccess?: (data: T) => void;
+  onSuccess?: (data: ResponseType) => void;
   onError?: (error: Error) => void;
   beforeRequest?: (url: string, options: RequestInit) => void;
   afterResponse?: (response: Response) => void;

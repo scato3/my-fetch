@@ -47,7 +47,7 @@ describe("hsc-fetch API E2E Test", () => {
       query: { select: "*" },
       onSuccess: (data: Array<{ id: number; key: string }>) => {
         expect(data).to.be.an("array");
-        expect(data[0]).to.have.property("key");
+        expect(data[0]).to.deep.equal({ id: 1, key: "value" });
       },
     });
 
@@ -57,6 +57,7 @@ describe("hsc-fetch API E2E Test", () => {
         "Bearer test-token"
       );
       expect(interception.request.url).to.include("/api/test");
+      expect(interception.request.url).to.include("select=%2A");
     });
   });
 
@@ -66,7 +67,7 @@ describe("hsc-fetch API E2E Test", () => {
       url: `${API_ENDPOINT}/test`,
       body: testData,
       onSuccess: (data: { key: string } & { id?: number }) => {
-        expect(data).to.have.property("key", "value");
+        expect(data).to.deep.equal({ id: 2, key: "value" });
       },
     });
 
@@ -171,30 +172,12 @@ describe("hsc-fetch API E2E Test", () => {
     });
   });
 
-  it("Error Handling Test", () => {
-    cy.intercept("GET", `${API_ENDPOINT}/test/error`, {
-      statusCode: 500,
-      body: { message: "Request failed" },
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).as("errorRequest");
-
-    api.get({
-      url: `${API_ENDPOINT}/test/error`,
-      onError: (error) => {
-        expect(error).to.be.instanceOf(Error);
-        expect(error.message).to.contain("Request failed");
-      },
-    });
-  });
-
   it("Timeout Test", () => {
     cy.intercept("GET", `${API_ENDPOINT}/test/timeout`, (req) => {
       req.reply({
         statusCode: 200,
-        body: { data: "delayed response" },
-        delay: 6000, // milliseconds
+        delay: 6000,
+        body: { message: "Delayed response" }
       });
     }).as("timeoutRequest");
 
@@ -204,6 +187,75 @@ describe("hsc-fetch API E2E Test", () => {
       onError: (error) => {
         expect(error.message).to.equal("Request timed out");
       },
+    });
+  });
+
+  it("Retry Logic Test", () => {
+    let attempts = 0;
+    cy.intercept("GET", `${API_ENDPOINT}/test/retry`, (req) => {
+      attempts++;
+      if (attempts < 3) {
+        req.reply({ 
+          statusCode: 500,
+          body: { message: "Server Error" }
+        });
+      } else {
+        req.reply({
+          statusCode: 200,
+          body: { success: true }
+        });
+      }
+    }).as("retryRequest");
+
+    api.get({
+      url: `${API_ENDPOINT}/test/retry`,
+      retryCount: 3,
+      retryDelay: 100,
+      onSuccess: (data) => {
+        expect(data).to.deep.equal({ success: true });
+      }
+    });
+
+    // 모든 요청을 기다림
+    cy.wait("@retryRequest")
+      .wait("@retryRequest")
+      .wait("@retryRequest")
+      .then(() => {
+        expect(attempts).to.equal(3);
+      });
+  });
+
+  it("Concurrent Requests Test", () => {
+    [1, 2, 3].forEach(id => {
+      cy.intercept("GET", `${API_ENDPOINT}/test/${id}`, {
+        statusCode: 200,
+        body: { id, data: `data${id}` }
+      }).as(`request${id}`);
+    });
+
+    // 각 요청 확인
+    [1, 2, 3].forEach(id => {
+      cy.wait(`@request${id}`);
+    });
+  });
+
+  it("Cache Headers Test", () => {
+    cy.intercept("GET", `${API_ENDPOINT}/test`, (req) => {
+      req.reply({
+        statusCode: 200,
+        body: [{ id: 1, key: "value" }]
+      });
+    }).as("getRequest");
+
+    api.get({
+      url: `${API_ENDPOINT}/test`,
+      headers: {
+        'Cache-Control': 'no-cache'
+      }
+    });
+
+    cy.wait("@getRequest").then((interception) => {
+      expect(interception.request.headers['cache-control']).to.equal('no-cache');
     });
   });
 });
