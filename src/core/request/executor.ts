@@ -1,6 +1,5 @@
 import type { TokenManager } from "../../utils/token";
-import type { RequestConfig } from "./types";
-import type { ApiResponse } from "../../types";
+import type { RequestConfig, ApiResponse } from "../../types";
 
 interface RetryParams extends RequestConfig {
   controller: AbortController;

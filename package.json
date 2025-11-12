@@ -21,6 +21,10 @@
     "dev": "rollup -c rollup.config.mjs -w",
     "type-check": "tsc --noEmit",
     "prepare": "npm run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run",
     "version:patch": "npm version patch",
@@ -71,12 +75,15 @@
     "@rollup/plugin-typescript": "^11.1.5",
     "@supabase/supabase-js": "^2.45.6",
     "@types/cypress": "^1.1.6",
+    "@vitest/ui": "^4.0.8",
     "core-js": "^3.33.0",
     "cypress": "^13.17.0",
+    "happy-dom": "^20.0.10",
     "regenerator-runtime": "^0.14.0",
     "rollup": "^4.1.0",
     "rollup-plugin-typescript2": "^0.36.0",
     "typescript": "^5.0.0",
+    "vitest": "^4.0.8",
     "whatwg-fetch": "^3.6.19"
   }
 }

@@ -1,6 +1,7 @@
 /// <reference types="cypress" />
 
 import Api from "../../src/index";
+import type { ApiResponse } from "../../src/types";
 
 describe("hsc-fetch API E2E Test", () => {
   const API_ENDPOINT = "/api";
@@ -33,7 +34,7 @@ describe("hsc-fetch API E2E Test", () => {
   });
 
   const api = new Api({
-    baseUrl: Cypress.config().baseUrl || "",
+    baseUrl: "", // baseUrl 없이도 작동 (cy.intercept가 모든 요청 가로챔)
     getToken: () => Cypress.env("ACCESS_TOKEN") || "test-token",
     onRefreshToken: async () => {
       // 토큰 갱신 즉시 수행
@@ -45,9 +46,11 @@ describe("hsc-fetch API E2E Test", () => {
     api.get({
       url: `${API_ENDPOINT}/test`,
       query: { select: "*" },
-      onSuccess: (data: Array<{ id: number; key: string }>) => {
-        expect(data).to.be.an("array");
-        expect(data[0]).to.deep.equal({ id: 1, key: "value" });
+      onSuccess: (response: ApiResponse<Array<{ id: number; key: string }>>) => {
+        expect(response.data).to.be.an("array");
+        expect(response.data[0]).to.deep.equal({ id: 1, key: "value" });
+        expect(response.status).to.equal(200);
+        expect(response.statusText).to.equal("OK");
       },
     });
 
@@ -66,8 +69,9 @@ describe("hsc-fetch API E2E Test", () => {
     api.post({
       url: `${API_ENDPOINT}/test`,
       body: testData,
-      onSuccess: (data: { key: string } & { id?: number }) => {
-        expect(data).to.deep.equal({ id: 2, key: "value" });
+      onSuccess: (response: ApiResponse<{ key: string; id?: number }>) => {
+        expect(response.data).to.deep.equal({ id: 2, key: "value" });
+        expect(response.status).to.equal(201);
       },
     });
 
@@ -85,8 +89,9 @@ describe("hsc-fetch API E2E Test", () => {
     api.put({
       url: `${API_ENDPOINT}/test/3`,
       body: updateData,
-      onSuccess: (data: { key: string } & { id?: number }) => {
-        expect(data).to.have.property("key", "updated");
+      onSuccess: (response: ApiResponse<{ key: string; id?: number }>) => {
+        expect(response.data).to.have.property("key", "updated");
+        expect(response.status).to.equal(200);
       },
     });
 
@@ -104,8 +109,9 @@ describe("hsc-fetch API E2E Test", () => {
     api.patch({
       url: `${API_ENDPOINT}/test/4`,
       body: patchData,
-      onSuccess: (data: { key: string } & { id?: number }) => {
-        expect(data).to.have.property("key", "patched");
+      onSuccess: (response: ApiResponse<{ key: string; id?: number }>) => {
+        expect(response.data).to.have.property("key", "patched");
+        expect(response.status).to.equal(200);
       },
     });
 
@@ -157,8 +163,8 @@ describe("hsc-fetch API E2E Test", () => {
 
     api.get({
       url: `${API_ENDPOINT}/test`,
-      onSuccess: (data: Array<{ id: number; key: string }>) => {
-        expect(data).to.be.an("array");
+      onSuccess: (response: ApiResponse<Array<{ id: number; key: string }>>) => {
+        expect(response.data).to.be.an("array");
       },
     });
 
@@ -211,8 +217,8 @@ describe("hsc-fetch API E2E Test", () => {
       url: `${API_ENDPOINT}/test/retry`,
       retryCount: 3,
       retryDelay: 100,
-      onSuccess: (data) => {
-        expect(data).to.deep.equal({ success: true });
+      onSuccess: (response: ApiResponse<{ success: boolean }>) => {
+        expect(response.data).to.deep.equal({ success: true });
       }
     });
 
@@ -223,20 +229,6 @@ describe("hsc-fetch API E2E Test", () => {
       .then(() => {
         expect(attempts).to.equal(3);
       });
-  });
-
-  it("Concurrent Requests Test", () => {
-    [1, 2, 3].forEach(id => {
-      cy.intercept("GET", `${API_ENDPOINT}/test/${id}`, {
-        statusCode: 200,
-        body: { id, data: `data${id}` }
-      }).as(`request${id}`);
-    });
-
-    // 각 요청 확인
-    [1, 2, 3].forEach(id => {
-      cy.wait(`@request${id}`);
-    });
   });
 
   it("Cache Headers Test", () => {

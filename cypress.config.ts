@@ -9,7 +9,7 @@ export default defineConfig({
     setupNodeEvents(on, config) {
       // Node 이벤트 추가 가능
     },
-    baseUrl: "http://localhost:3000",
+    // baseUrl 제거 - API 라이브러리는 서버 불필요
     supportFile: "cypress/e2e/support/e2e.ts",
     specPattern: "cypress/e2e/**/*.cy.ts",
     watchForFileChanges: false,
