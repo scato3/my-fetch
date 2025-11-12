@@ -71,6 +71,12 @@ jobs:
           npm version ${{ steps.bump_type.outputs.type }} -m "chore: bump version to %s [skip ci]"
           echo "new_version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: Generate CHANGELOG
+        run: |
+          pnpm run changelog
+          git add CHANGELOG.md
+          git commit -m "docs: update CHANGELOG for v${{ steps.version.outputs.new_version }} [skip ci]" || echo "No changes to CHANGELOG"
+
       - name: Push version commit and tag
         run: |
           git push origin ${{ github.ref_name }}
@@ -81,6 +87,23 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Extract CHANGELOG for current version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.new_version }}"
+          if [ -f CHANGELOG.md ]; then
+            # Extract content between current version and next version heading
+            CHANGELOG_CONTENT=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
+            if [ -z "$CHANGELOG_CONTENT" ]; then
+              CHANGELOG_CONTENT="Auto-generated release for version ${VERSION}"
+            fi
+          else
+            CHANGELOG_CONTENT="Auto-generated release for version ${VERSION}"
+          fi
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: actions/create-release@v1
         env:
@@ -88,7 +111,6 @@ jobs:
         with:
           tag_name: v${{ steps.version.outputs.new_version }}
           release_name: Release v${{ steps.version.outputs.new_version }}
-          body: |
-            Auto-generated release for version ${{ steps.version.outputs.new_version }}
+          body: ${{ steps.changelog.outputs.content }}
           draft: false
           prerelease: false
