@@ -1,4 +1,4 @@
-/* hsc-fetch ver 1.2.5 */
+/* hsc-fetch ver 1.1.0 */
 
 import "core-js/stable";
 import "regenerator-runtime/runtime";

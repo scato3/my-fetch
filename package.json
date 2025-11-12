@@ -1,6 +1,6 @@
 {
   "name": "hsc-fetch",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -22,7 +22,10 @@
     "type-check": "tsc --noEmit",
     "prepare": "npm run build",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "version:patch": "npm version patch",
+    "version:minor": "npm version minor",
+    "version:major": "npm version major"
   },
   "keywords": [
     "api",

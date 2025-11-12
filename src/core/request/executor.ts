@@ -1,5 +1,6 @@
 import type { TokenManager } from "../../utils/token";
 import type { RequestConfig } from "./types";
+import type { ApiResponse } from "../../types";
 
 interface RetryParams extends RequestConfig {
   controller: AbortController;
@@ -9,7 +10,7 @@ interface RetryParams extends RequestConfig {
 export class RequestExecutor {
   constructor(private tokenManager: TokenManager) {}
 
-  async execute<T>(config: RequestConfig): Promise<T> {
+  async execute<T>(config: RequestConfig): Promise<ApiResponse<T>> {
     const controller = new AbortController();
     config.requestOptions.signal = controller.signal;
 
@@ -29,7 +30,7 @@ export class RequestExecutor {
     handlers,
     controller,
     attempt,
-  }: RetryParams): Promise<T> {
+  }: RetryParams): Promise<ApiResponse<T>> {
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => {
         controller.abort();
@@ -79,11 +80,19 @@ export class RequestExecutor {
         ? await response.json()
         : await response.text();
 
+      const apiResponse: ApiResponse<T> = {
+        data: data as T,
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+        config: requestOptions,
+      };
+
       if (handlers?.onSuccess) {
-        handlers.onSuccess(data);
+        handlers.onSuccess(apiResponse);
       }
 
-      return data;
+      return apiResponse;
     } catch (error) {
       if (handlers?.onError && error instanceof Error) {
         handlers.onError(error);

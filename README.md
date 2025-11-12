@@ -44,18 +44,25 @@ const api = new Api({
 // Example GET request with error handling
 const fetchData = async () => {
   try {
-    const data = await api.get({
+    const response = await api.get({
       url: "/data",
       query: { page: 1 },
       revalidate: 60,
       tags: ["data"],
-      onSuccess: (data) => {
-        console.log("Data fetched successfully:", data);
+      onSuccess: (response) => {
+        console.log("Data fetched successfully:", response.data);
+        console.log("Status:", response.status);
       },
       onError: (error) => {
         console.error("Error fetching data:", error);
       },
     });
+
+    // Access response data (axios-like)
+    console.log(response.data);      // Actual data
+    console.log(response.status);    // HTTP status code (e.g., 200)
+    console.log(response.statusText); // HTTP status text (e.g., "OK")
+    console.log(response.headers);   // Response headers
   } catch (error) {
     console.error("Request failed:", error);
   }
@@ -64,19 +71,23 @@ const fetchData = async () => {
 // Example POST request with timeout
 const postData = async () => {
   try {
-    await api.post({
+    const response = await api.post({
       url: "/data",
       body: { name: "John Doe" },
       timeout: 5000,
       retryCount: 3,
       retryDelay: 1000,
-      onSuccess: (data) => {
-        console.log("Data posted successfully:", data);
+      onSuccess: (response) => {
+        console.log("Data posted successfully:", response.data);
       },
       onError: (error) => {
         console.error("Error posting data:", error);
       },
     });
+
+    // Access response like axios
+    console.log(response.data);
+    console.log(response.status);
   } catch (error) {
     console.error("Request failed:", error);
   }
@@ -103,12 +114,26 @@ interface ApiConfig {
 
 ### HTTP Methods
 
+All methods return an `ApiResponse<T>` object (axios-like structure):
+
 ```ts
-get<T>(options: FetchOptions<T>): Promise<T>
-post<T>(options: FetchOptions<T>): Promise<T>
-put<T>(options: FetchOptions<T>): Promise<T>
-patch<T>(options: FetchOptions<T>): Promise<T>
-delete<T>(options: FetchOptions<T>): Promise<T>
+get<T>(options: FetchOptions<T>): Promise<ApiResponse<T>>
+post<T>(options: FetchOptions<T>): Promise<ApiResponse<T>>
+put<T>(options: FetchOptions<T>): Promise<ApiResponse<T>>
+patch<T>(options: FetchOptions<T>): Promise<ApiResponse<T>>
+delete<T>(options: FetchOptions<T>): Promise<ApiResponse<T>>
+```
+
+### Response Structure
+
+```ts
+interface ApiResponse<T> {
+  data: T;              // Response data
+  status: number;       // HTTP status code (e.g., 200, 404)
+  statusText: string;   // HTTP status text (e.g., "OK", "Not Found")
+  headers: Headers;     // Response headers
+  config: RequestInit;  // Request configuration
+}
 ```
 
 ### Request Options
@@ -128,7 +153,7 @@ interface FetchOptions<T = unknown> {
   useToken?: boolean; // Optional: Use authentication token
   revalidate?: number; // Optional: Next.js ISR revalidation
   tags?: string[]; // Optional: Next.js ISR tags
-  onSuccess?: (data: T) => void; // Optional: Success callback
+  onSuccess?: (response: ApiResponse<T>) => void; // Optional: Success callback
   onError?: (error: Error) => void; // Optional: Error callback
   beforeRequest?: (url: string, options: RequestInit) => void; // Optional: Pre-request hook
   afterResponse?: (response: Response) => void; // Optional: Post-response hook

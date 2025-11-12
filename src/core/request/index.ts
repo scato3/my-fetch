@@ -1,4 +1,4 @@
-import type { FetchOptions } from "../../types";
+import type { FetchOptions, ApiResponse } from "../../types";
 import type { TokenManager } from "../../utils/token";
 import { createUrl } from "./url";
 import { createRequestOptions } from "./options";
@@ -18,7 +18,7 @@ export class RequestHandler {
       getToken?: () => string | null | Promise<string | null>;
       authorizationType?: string | null;
     }
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     const fullUrl = createUrl(options.url, options.query, config.baseUrl);
     const requestOptions = await createRequestOptions({
       method: options.method || "GET",

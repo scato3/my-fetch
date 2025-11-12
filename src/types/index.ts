@@ -4,6 +4,15 @@ export interface NextFetchOptions {
   tags?: string[];
 }
 
+// API Response structure
+export interface ApiResponse<T = unknown> {
+  data: T;
+  status: number;
+  statusText: string;
+  headers: Headers;
+  config: RequestInit;
+}
+
 // Main fetch options
 export interface FetchOptions<ResponseType = unknown, RequestType = unknown> {
   method?: string;
@@ -16,7 +25,7 @@ export interface FetchOptions<ResponseType = unknown, RequestType = unknown> {
   retryCount?: number;
   retryDelay?: number;
   timeout?: number;
-  onSuccess?: (data: ResponseType) => void;
+  onSuccess?: (response: ApiResponse<ResponseType>) => void;
   onError?: (error: Error) => void;
   beforeRequest?: (url: string, options: RequestInit) => void;
   afterResponse?: (response: Response) => void;
@@ -30,4 +39,4 @@ export interface ApiConfig {
   onRefreshToken?: () => Promise<void>;
   onRefreshTokenFailed?: () => void;
   authorizationType?: "Bearer" | "Basic" | string | null;
-} 
+}
