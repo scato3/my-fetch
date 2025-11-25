@@ -1,34 +1,16 @@
-# Auto Deploy 설정 가이드
+# Auto Deploy (Changesets 기반)
 
-GitHub Actions를 통해 main 또는 develop 브랜치에 푸시하면 **커밋 메시지에 따라 자동으로 버전업** 및 npm 배포가 이루어집니다.
+GitHub Actions를 통해 main 또는 develop 브랜치에 푸시하면 **Changesets**로 버전을 올리고 npm에 배포합니다. 커밋 메시지 접두사는 더 이상 버전을 결정하지 않습니다.
 
-## 커밋 메시지 규칙 (Semantic Versioning)
-
-커밋 메시지 접두사에 따라 자동으로 버전이 결정됩니다:
-
-| 커밋 메시지 | 버전 변경 | 예시 |
-|-----------|----------|------|
-| `BREAKING CHANGE:` 또는 `major:` | **Major** (1.0.0 → 2.0.0) | `major: redesign API structure` |
-| `feat:` 또는 `feature:` 또는 `minor:` | **Minor** (1.0.0 → 1.1.0) | `feat: add new authentication method` |
-| 그 외 (`fix:`, `docs:`, `chore:` 등) | **Patch** (1.0.0 → 1.0.1) | `fix: resolve token refresh bug` |
-
-### 예시
-
-```bash
-# Patch 버전 증가 (1.1.0 → 1.1.1)
-git commit -m "fix: resolve response data issue"
-git commit -m "docs: update README"
-git commit -m "chore: update dependencies"
-
-# Minor 버전 증가 (1.1.0 → 1.2.0)
-git commit -m "feat: add retry mechanism"
-git commit -m "feature: support custom headers"
-git commit -m "minor: add new config option"
-
-# Major 버전 증가 (1.1.0 → 2.0.0)
-git commit -m "BREAKING CHANGE: change response structure"
-git commit -m "major: remove deprecated methods"
-```
+## 기본 흐름
+1. 기능/버그 작업 후 `pnpm changeset` 실행 → major/minor/patch 선택 → 요약 작성. 생성된 파일은 `.changeset/*.md`에 생깁니다.
+2. 코드와 함께 Changeset 파일을 커밋/PR에 포함합니다.
+3. PR을 main 또는 develop으로 머지하면 워크플로우가 실행됩니다.
+4. 워크플로우는 테스트/빌드 통과 후 pending changeset이 있을 때만:
+   - `pnpm changeset version`으로 `package.json`, `pnpm-lock.yaml`, `CHANGELOG.md`를 업데이트하고 커밋/태그(`vX.Y.Z`)를 푸시
+   - `pnpm changeset publish --no-git-checks`로 npm 배포
+   - 생성된 changelog로 GitHub Release 생성
+5. pending changeset이 없으면 배포를 건너뜁니다.
 
 ## 1. npm 토큰 발급
 
@@ -139,4 +121,8 @@ git commit -m "docs: update README [skip ci]"
 pnpm install
 pnpm run type-check
 pnpm run build
+
+# 버전/배포 수동 실행 (필요 시)
+# pending changeset이 있을 때만 의미가 있습니다.
+# 로컬에서 버전+배포: pnpm run release
 ```

@@ -48,63 +48,84 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Determine version bump type
-        id: bump_type
+      - name: Check for pending changesets
+        id: changesets
         run: |
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          echo "Commit message: $COMMIT_MSG"
-
-          if echo "$COMMIT_MSG" | grep -qiE "^(BREAKING CHANGE|major):"; then
-            echo "type=major" >> $GITHUB_OUTPUT
-            echo "Version bump: MAJOR"
-          elif echo "$COMMIT_MSG" | grep -qiE "^(feat|feature|minor):"; then
-            echo "type=minor" >> $GITHUB_OUTPUT
-            echo "Version bump: MINOR"
+          if find .changeset -maxdepth 1 -name '*.md' ! -name 'README.md' | grep -q .; then
+            echo "has_changesets=true" >> $GITHUB_OUTPUT
           else
-            echo "type=patch" >> $GITHUB_OUTPUT
-            echo "Version bump: PATCH"
+            echo "has_changesets=false" >> $GITHUB_OUTPUT
+            echo "No pending changesets found. Skipping release."
           fi
 
-      - name: Bump version
+      - name: Version packages
+        if: steps.changesets.outputs.has_changesets == 'true'
+        run: pnpm changeset version
+
+      - name: Read new version
+        if: steps.changesets.outputs.has_changesets == 'true'
         id: version
-        run: |
-          npm version ${{ steps.bump_type.outputs.type }} -m "chore: bump version to %s [skip ci]"
-          echo "new_version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
 
-      - name: Generate CHANGELOG
+      - name: Commit release
+        if: steps.changesets.outputs.has_changesets == 'true'
         run: |
-          pnpm run changelog
-          git add CHANGELOG.md
-          git commit -m "docs: update CHANGELOG for v${{ steps.version.outputs.new_version }} [skip ci]" || echo "No changes to CHANGELOG"
+          git add package.json pnpm-lock.yaml CHANGELOG.md .changeset
+          git commit -m "chore: release v${{ steps.version.outputs.new_version }} [skip ci]"
 
-      - name: Push version commit and tag
+      - name: Tag version
+        if: steps.changesets.outputs.has_changesets == 'true'
+        run: git tag v${{ steps.version.outputs.new_version }}
+
+      - name: Push release commit and tag
+        if: steps.changesets.outputs.has_changesets == 'true'
         run: |
           git push origin ${{ github.ref_name }}
-          git push --tags
+          git push origin v${{ steps.version.outputs.new_version }}
 
       - name: Publish to npm
-        run: pnpm publish --no-git-checks --access public
+        if: steps.changesets.outputs.has_changesets == 'true'
+        run: pnpm changeset publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Extract CHANGELOG for current version
+        if: steps.changesets.outputs.has_changesets == 'true'
         id: changelog
+        env:
+          VERSION: ${{ steps.version.outputs.new_version }}
         run: |
-          VERSION="${{ steps.version.outputs.new_version }}"
-          if [ -f CHANGELOG.md ]; then
-            # Extract content between current version and next version heading
-            CHANGELOG_CONTENT=$(sed -n "/^## \[${VERSION}\]/,/^## \[/p" CHANGELOG.md | sed '$d' | tail -n +2)
-            if [ -z "$CHANGELOG_CONTENT" ]; then
-              CHANGELOG_CONTENT="Auto-generated release for version ${VERSION}"
-            fi
-          else
-            CHANGELOG_CONTENT="Auto-generated release for version ${VERSION}"
-          fi
+          python - <<'PY' > /tmp/changelog.txt
+import os
+
+version = os.environ["VERSION"]
+pkg = "hsc-fetch"
+lines = []
+with open("CHANGELOG.md", "r", encoding="utf-8") as f:
+    lines = f.readlines()
+
+capture = False
+collected = []
+for line in lines:
+    if line.startswith(f"## {version}") or line.startswith(f"## {pkg}@{version}"):
+        capture = True
+        continue
+    if capture and line.startswith("## "):
+        break
+    if capture:
+        collected.append(line)
+
+content = "".join(collected).strip() or f"Release {version}"
+print(content)
+with open("/tmp/changelog.txt", "w", encoding="utf-8") as f:
+    f.write(content)
+PY
           echo "content<<EOF" >> $GITHUB_OUTPUT
-          echo "$CHANGELOG_CONTENT" >> $GITHUB_OUTPUT
+          cat /tmp/changelog.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
+        if: steps.changesets.outputs.has_changesets == 'true'
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
