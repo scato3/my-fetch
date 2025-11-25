@@ -96,30 +96,30 @@ jobs:
           VERSION: ${{ steps.version.outputs.new_version }}
         run: |
           python - <<'PY' > /tmp/changelog.txt
-import os
+          import os
 
-version = os.environ["VERSION"]
-pkg = "hsc-fetch"
-lines = []
-with open("CHANGELOG.md", "r", encoding="utf-8") as f:
-    lines = f.readlines()
+          version = os.environ["VERSION"]
+          pkg = "hsc-fetch"
+          lines = []
+          with open("CHANGELOG.md", "r", encoding="utf-8") as f:
+              lines = f.readlines()
 
-capture = False
-collected = []
-for line in lines:
-    if line.startswith(f"## {version}") or line.startswith(f"## {pkg}@{version}"):
-        capture = True
-        continue
-    if capture and line.startswith("## "):
-        break
-    if capture:
-        collected.append(line)
+          capture = False
+          collected = []
+          for line in lines:
+              if line.startswith(f"## {version}") or line.startswith(f"## {pkg}@{version}"):
+                  capture = True
+                  continue
+              if capture and line.startswith("## "):
+                  break
+              if capture:
+                  collected.append(line)
 
-content = "".join(collected).strip() or f"Release {version}"
-print(content)
-with open("/tmp/changelog.txt", "w", encoding="utf-8") as f:
-    f.write(content)
-PY
+          content = "".join(collected).strip() or f"Release {version}"
+          print(content)
+          with open("/tmp/changelog.txt", "w", encoding="utf-8") as f:
+              f.write(content)
+          PY
           echo "content<<EOF" >> $GITHUB_OUTPUT
           cat /tmp/changelog.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
