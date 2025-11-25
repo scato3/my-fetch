@@ -65,7 +65,9 @@ jobs:
       - name: Read new version
         if: steps.changesets.outputs.has_changesets == 'true'
         id: version
-        run: echo "new_version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+        run: |
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "new_version=${NEW_VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Commit release
         if: steps.changesets.outputs.has_changesets == 'true'
